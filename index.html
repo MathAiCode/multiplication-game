@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تدريب جدول الضرب مع الجوائز</title>
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-image: url('images/kids-background.png');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      text-align: center;
+      direction: rtl;
+      padding: 20px;
+      position: relative;
+    }
+    h2 { color: #2c3e50; margin: 20px; font-size: 28px; }
+    .question { margin: 20px; font-size: 24px; }
+    input { padding: 10px; font-size: 20px; width: 80px; text-align: center; }
+    button { padding: 10px 20px; font-size: 18px; margin: 5px; border-radius: 10px; border: none; cursor: pointer; }
+    .correct { color: green; font-weight: bold; }
+    .wrong { color: red; font-weight: bold; }
+    #helpBox { display: none; border: 2px solid #ddd; padding: 20px; border-radius: 15px; background: #fff; margin-top: 20px; }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #rewardStar {
+      position: fixed;
+      top: 40px;
+      right: 50px;
+      width: 80px;
+      display: none;
+      transition: transform 0.5s ease-in-out;
+      z-index: 1000;
+    }
+    #character {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      width: 120px;
+      z-index: 500;
+    }
+  </style>
+</head>
+<body>
+
+<h2 id="title"></h2>
+<div class="question" id="questionBox"></div>
+
+<img src="images/star.png" id="rewardStar">
+<img src="images/character.png" id="character">
+
+<div id="helpBox">
+  <h3>شرح العملية:</h3>
+  <div id="helpContent"></div>
+  <button onclick="closeHelp()">إغلاق</button>
+</div>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const table = parseInt(urlParams.get('table')) || 2;
+  document.getElementById("title").innerText = `تدريب جدول ${table}`;
+  const questionBox = document.getElementById("questionBox");
+
+  let correctCount = 0;
+
+  for (let i = 1; i <= 10; i++) {
+    const div = document.createElement("div");
+    div.innerHTML = `${table} × ${i} = <input id="ans-${i}" />
+      <button onclick="checkAnswer(${i})">تحقق</button>
+      <button onclick="showHelp(${i})">مساعدة</button>
+      <span id="result-${i}"></span>`;
+    questionBox.appendChild(div);
+  }
+
+  function checkAnswer(i) {
+    const userAnswer = parseInt(document.getElementById(`ans-${i}`).value);
+    const correct = table * i;
+    const resultSpan = document.getElementById(`result-${i}`);
+
+    if (userAnswer === correct) {
+      resultSpan.innerHTML = "<span class='correct'>✔️ صحيح</span>";
+      playSound('correct');
+      correctCount++;
+      if (correctCount % 3 === 0) {
+        showStar();
+        characterTalk("أحسنت! نجم جديد لك!", "sounds/encourage.mp3");
+      }
+    } else {
+      resultSpan.innerHTML = "<span class='wrong'>❌ خطأ</span>";
+      playSound('wrong');
+    }
+  }
+
+  function showHelp(i) {
+    const total = table * i;
+    const helpBox = document.getElementById("helpContent");
+    helpBox.innerHTML = `<p><strong>شرح العملية:</strong></p><p>${table} مجموعات × ${i} مرات = ${total}</p>`;
+    let currentGroup = 1;
+
+    const imgType = table <= 5 ? "sticks.png" : "balls.png";
+
+    function renderGroup() {
+      if (currentGroup > i) return;
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'fade-in';
+      groupDiv.style.marginBottom = '10px';
+      groupDiv.innerHTML = `<strong>مجموعة ${currentGroup}:</strong><br>`;
+      for (let s = 1; s <= table; s++) {
+        const img = document.createElement('img');
+        img.src = `images/${imgType}`;
+        img.width = 30;
+        img.style.margin = '2px';
+        groupDiv.appendChild(img);
+      }
+      helpBox.appendChild(groupDiv);
+      currentGroup++;
+      setTimeout(renderGroup, 500);
+    }
+
+    renderGroup();
+    document.getElementById("helpBox").style.display = 'block';
+  }
+
+  function playSound(type) {
+    const audio = new Audio(type === 'correct' ? 'sounds/correct.mp3' : 'sounds/wrong.mp3');
+    audio.play();
+  }
+
+  function characterTalk(text, audioFile) {
+    alert(text);
+    const audio = new Audio(audioFile);
+    audio.play();
+  }
+
+  function showStar() {
+    const star = document.getElementById("rewardStar");
+    star.style.display = "block";
+    star.style.transform = "scale(1.5)";
+    setTimeout(() => { star.style.transform = "scale(1)"; }, 500);
+    setTimeout(() => { star.style.display = "none"; }, 1500);
+  }
+
+  function closeHelp() {
+    document.getElementById("helpBox").style.display = 'none';
+  }
+</script>
+
+</body>
+</html>

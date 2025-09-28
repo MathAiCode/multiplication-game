@@ -1,155 +1,250 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>تدريب جدول الضرب مع الجوائز</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>التقريب للصف الثامن – طابق البطاقات</title>
   <style>
-    body {
-      font-family: 'Cairo', sans-serif;
-      background-image: url('images/kids-background.png');
-      background-size: cover;
-      background-repeat: no-repeat;
-      background-position: center;
-      text-align: center;
-      direction: rtl;
-      padding: 20px;
-      position: relative;
+    body { margin:0; font-family: "Noto Naskh Arabic", Arial, sans-serif; background:#0f172a; display:flex; justify-content:center; align-items:center; height:100vh; }
+    .phone { width:min(100vw,420px); aspect-ratio:9/16; background:#f8fafc; border-radius:20px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.4); display:flex; flex-direction:column; }
+    header { background:#0ea5e9; color:#fff; padding:10px; text-align:center; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:4px; font-size:13px; line-height:1.4; }
+    header img { max-height:60px; width:auto; object-fit:contain; margin-bottom:4px; }
+    header .subtitle { font-size:13px; font-weight:600; color:#e0f2fe; }
+
+    .topbar { display:flex; gap:8px; align-items:center; justify-content:space-between; padding:8px 10px; background:#eef2f7; }
+    .pill { background:#e2e8f0; border-radius:999px; padding:6px 10px; font-weight:700; font-size:13px; }
+    #progressWrap{ height:6px; background:#e5e7eb; border-radius:999px; margin:0 10px 8px; overflow:hidden; }
+    #progress{ height:100%; width:0%; background:#0ea5e9; transition:width .25s ease; }
+
+    .board { flex:1; display:flex; gap:10px; padding:10px; }
+    .col { flex:1; display:grid; grid-auto-rows:1fr; gap:8px; }
+
+    .card { background:#fff; border:2px solid #e2e8f0; border-radius:12px; padding:10px; text-align:center; font-size:15px; font-weight:800; user-select:none; box-shadow:0 3px 10px rgba(0,0,0,.06); }
+    .card.small { font-weight:900; }
+    .card.tap { cursor:pointer; }
+    .card.selected { border-color:#3b82f6; background:#eff6ff; }
+    .card.matched { background:#dcfce7 !important; border-color:#16a34a !important; color:#065f46; box-shadow:0 6px 18px rgba(22,163,74,.2); }
+    .bad { animation: shake .35s linear; }
+
+    @keyframes shake {
+      10% { transform: translateX(-4px); }
+      20% { transform: translateX(4px); }
+      30% { transform: translateX(-4px); }
+      40% { transform: translateX(4px); }
+      50% { transform: translateX(-2px); }
+      60% { transform: translateX(2px); }
+      70% { transform: translateX(-1px); }
+      80% { transform: translateX(1px); }
+      90% { transform: translateX(0px); }
     }
-    h2 { color: #2c3e50; margin: 20px; font-size: 28px; }
-    .question { margin: 20px; font-size: 24px; }
-    input { padding: 10px; font-size: 20px; width: 80px; text-align: center; }
-    button { padding: 10px 20px; font-size: 18px; margin: 5px; border-radius: 10px; border: none; cursor: pointer; }
-    .correct { color: green; font-weight: bold; }
-    .wrong { color: red; font-weight: bold; }
-    #helpBox { display: none; border: 2px solid #ddd; padding: 20px; border-radius: 15px; background: #fff; margin-top: 20px; }
-    .fade-in {
-      animation: fadeIn 0.5s ease-in-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    #rewardStar {
-      position: fixed;
-      top: 40px;
-      right: 50px;
-      width: 80px;
-      display: none;
-      transition: transform 0.5s ease-in-out;
-      z-index: 1000;
-    }
-    #character {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      width: 120px;
-      z-index: 500;
-    }
+
+    .overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:50; }
+    .overlay.show { display:flex; }
+    .modal { width:86%; max-width:360px; background:#fff; border-radius:18px; padding:16px; text-align:center; box-shadow:0 14px 48px rgba(0,0,0,.25); }
+    .modal h2{ margin:0 0 8px; }
+    .modal p{ margin:0 0 12px; color:#334155; }
+    .btn { border:0; border-radius:10px; padding:10px 14px; font-weight:800; background:#0ea5e9; color:#fff; }
   </style>
 </head>
 <body>
+  <div class="phone" id="app">
+    <header>
+      <img id="schoolLogo" src="school-logo.png" alt="شعار المدرسة" style="max-height:60px; width:auto; object-fit:contain; margin-bottom:4px;"/>
+      أسرة مادة الرياضيات بمدرسة الفاروق للتعليم الأساسي – تعليمية البريمي
+      <div class="subtitle">التقريب للصف الثامن – طابق البطاقات</div>
+    </header>
 
-<h2 id="title"></h2>
-<div class="question" id="questionBox"></div>
+    <div class="topbar">
+      <div class="pill">المستوى: <b id="level">١</b></div>
+      <div class="pill">النقاط: <b id="score">٠</b></div>
+      <button id="restart" class="btn" style="padding:6px 10px; font-size:12px;">إعادة</button>
+    </div>
+    <div id="progressWrap"><div id="progress"></div></div>
 
-<img src="images/star.png" id="rewardStar">
-<img src="images/character.png" id="character">
+    <div id="board" class="board" aria-live="polite">
+      <div class="col" id="questionsCol" aria-label="أسئلة"></div>
+      <div class="col" id="answersCol" aria-label="إجابات"></div>
+    </div>
 
-<div id="helpBox">
-  <h3>شرح العملية:</h3>
-  <div id="helpContent"></div>
-  <button onclick="closeHelp()">إغلاق</button>
-</div>
+    <div id="finish" class="overlay" role="dialog" aria-modal="true">
+      <div class="modal">
+        <h2>🎉 أحسنت!</h2>
+        <p>أنهيت جميع الأزواج. المستوى الحالي: <b id="finalLevel">١</b> – مجموع نقاطك: <b id="finalScore">٠</b></p>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+          <button id="nextLevel" class="btn">المستوى التالي ⮕</button>
+          <button id="playAgain" class="btn" style="background:#10b981;">إعادة المستوى</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const table = parseInt(urlParams.get('table')) || 2;
-  document.getElementById("title").innerText = `تدريب جدول ${table}`;
-  const questionBox = document.getElementById("questionBox");
+  <script>
+    // ——— أدوات عرض الأرقام الهندية وفاصل عشري عربي ———
+    const HINDI = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
+    const toHindi = (s)=> String(s).replace(/[0-9]/g, d=>HINDI[+d]).replaceAll('.', '٫');
 
-  let correctCount = 0;
+    // ——— مُقرّبات ———
+    const roundTo = (num, dp)=> Number(Math.round(num * 10**dp) / 10**dp).toFixed(dp);
 
-  for (let i = 1; i <= 10; i++) {
-    const div = document.createElement("div");
-    div.innerHTML = `${table} × ${i} = <input id="ans-${i}" />
-      <button onclick="checkAnswer(${i})">تحقق</button>
-      <button onclick="showHelp(${i})">مساعدة</button>
-      <span id="result-${i}"></span>`;
-    questionBox.appendChild(div);
-  }
+    // ——— مُنتِج مستويات ———
+    // level 1: ثابت كما اتفقنا
+    const LEVEL1 = [
+      { id: 1, q: 'قرّب العدد ٢٥٫٦٨ إلى منزلتين عشريتين', a: '٢٥٫٦٨' },
+      { id: 2, q: 'قرّب العدد ٣٫١٤١٥ إلى منزلتين عشريتين', a: '٣٫١٤' },
+      { id: 3, q: 'عبّر عن ٠٫٠٠٤٥٢ برقمين معنويين', a: '٠٫٠٠٤٥' },
+      { id: 4, q: 'قرّب العدد ١٨٫٣٧٤ إلى ٣ أرقام معنوية', a: '١٨٫٤' },
+      { id: 5, q: 'عبّر عن ٦٥٧٩ برقمين معنويين', a: '٦٦٠٠' },
+      { id: 6, q: 'قرّب العدد ٠٫٩٩٩٥ إلى ٣ منازل عشرية', a: '١٫٠٠٠' },
+    ];
 
-  function checkAnswer(i) {
-    const userAnswer = parseInt(document.getElementById(`ans-${i}`).value);
-    const correct = table * i;
-    const resultSpan = document.getElementById(`result-${i}`);
-
-    if (userAnswer === correct) {
-      resultSpan.innerHTML = "<span class='correct'>✔️ صحيح</span>";
-      playSound('correct');
-      correctCount++;
-      if (correctCount % 3 === 0) {
-        showStar();
-        characterTalk("أحسنت! نجم جديد لك!", "sounds/encourage.mp3");
+    // level 2: أعداد عشرية تبدأ بـ ٠٫….. ونفس العدد يُطلب تقريبُه إلى منازل مختلفة
+    function makeLevel2(){
+      // رقم أساسي 0.xyz w (4 منازل) لضمان اختلافات عند التقريب
+      const x = Math.floor(1000 + Math.random()*9000); // 1000..9999
+      const base = x / 10000; // 0.xxxx
+      const baseStr = toHindi(base.toFixed(4));
+      // منازل مختلفة
+      const places = [1,2,3,4,5].slice(0, 6); // نستخدم حتى 5 منازل (تكفي للموبايل)
+      const pairs = [];
+      let id = 100; // معرفات فريدة للمستوى 2
+      for (const dp of [1,2,3,4,5,2]){ // نكرر 2 مرتين لإكمال 6 بطاقات مع تنويع نصّ السؤال
+        const ans = roundTo(base, dp); // كقيمة رقمية بس بنقلبها عرضيًا لاحقًا
+        const q = `قرّب العدد ${baseStr} إلى ${toHindi(dp)} منزلة عشرية`;
+        pairs.push({ id: id++, q, a: toHindi(ans) });
       }
-    } else {
-      resultSpan.innerHTML = "<span class='wrong'>❌ خطأ</span>";
-      playSound('wrong');
-    }
-  }
-
-  function showHelp(i) {
-    const total = table * i;
-    const helpBox = document.getElementById("helpContent");
-    helpBox.innerHTML = `<p><strong>شرح العملية:</strong></p><p>${table} مجموعات × ${i} مرات = ${total}</p>`;
-    let currentGroup = 1;
-
-    const imgType = table <= 5 ? "sticks.png" : "balls.png";
-
-    function renderGroup() {
-      if (currentGroup > i) return;
-      const groupDiv = document.createElement('div');
-      groupDiv.className = 'fade-in';
-      groupDiv.style.marginBottom = '10px';
-      groupDiv.innerHTML = `<strong>مجموعة ${currentGroup}:</strong><br>`;
-      for (let s = 1; s <= table; s++) {
-        const img = document.createElement('img');
-        img.src = `images/${imgType}`;
-        img.width = 30;
-        img.style.margin = '2px';
-        groupDiv.appendChild(img);
-      }
-      helpBox.appendChild(groupDiv);
-      currentGroup++;
-      setTimeout(renderGroup, 500);
+      return pairs;
     }
 
-    renderGroup();
-    document.getElementById("helpBox").style.display = 'block';
-  }
+    // level 3 (اختياري لاحقًا): ممكن نخليه أعداد مثل ١٢٫٠٠٣٤ مع طلب منازل/أرقام معنوية متنوعة.
 
-  function playSound(type) {
-    const audio = new Audio(type === 'correct' ? 'sounds/correct.mp3' : 'sounds/wrong.mp3');
-    audio.play();
-  }
+    // ——— حالة اللعبة ———
+    let currentLevel = 1;
+    let PAIRS = LEVEL1.slice();
+    let selectedQ = null; // id السؤال المختار
+    let selectedA = null; // id الإجابة المختارة
+    let matched = new Set();
+    let score = 0;
 
-  function characterTalk(text, audioFile) {
-    alert(text);
-    const audio = new Audio(audioFile);
-    audio.play();
-  }
+    const $ = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
+    const qCol = $('#questionsCol');
+    const aCol = $('#answersCol');
 
-  function showStar() {
-    const star = document.getElementById("rewardStar");
-    star.style.display = "block";
-    star.style.transform = "scale(1.5)";
-    setTimeout(() => { star.style.transform = "scale(1)"; }, 500);
-    setTimeout(() => { star.style.display = "none"; }, 1500);
-  }
+    function updateHUD(){
+      $('#level').textContent = toHindi(currentLevel);
+      $('#score').textContent = toHindi(score);
+      const pct = Math.round( (matched.size / PAIRS.length) * 100 );
+      $('#progress').style.width = pct + '%';
+    }
 
-  function closeHelp() {
-    document.getElementById("helpBox").style.display = 'none';
-  }
-</script>
+    function resetSelection(){
+      selectedQ = null; selectedA = null;
+      $$('.card.selected').forEach(c=>c.classList.remove('selected'));
+    }
 
+    function showFinish(){
+      $('#finalLevel').textContent = toHindi(currentLevel);
+      $('#finalScore').textContent = toHindi(score);
+      $('#finish').classList.add('show');
+    }
+
+    function tryMatch(){
+      if(!selectedQ || !selectedA) return;
+      const qEl = $(`#questionsCol .card[data-id="${selectedQ}"]`);
+      const aEl = $(`#answersCol .card[data-id="${selectedA}"]`);
+      if (selectedQ === selectedA){
+        qEl.classList.add('matched');
+        aEl.classList.add('matched');
+        qEl.style.pointerEvents = 'none';
+        aEl.style.pointerEvents = 'none';
+        matched.add(selectedQ);
+        score += 1;
+        updateHUD();
+        resetSelection();
+        if (matched.size === PAIRS.length){ showFinish(); }
+      } else {
+        qEl.classList.add('bad'); aEl.classList.add('bad');
+        setTimeout(()=>{ qEl.classList.remove('bad'); aEl.classList.remove('bad'); }, 350);
+        resetSelection();
+      }
+    }
+
+    function tapQuestion(card){
+      if (card.classList.contains('matched')) return;
+      $$('#questionsCol .card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedQ = parseInt(card.dataset.id,10);
+      tryMatch();
+    }
+
+    function tapAnswer(card){
+      if (card.classList.contains('matched')) return;
+      $$('#answersCol .card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedA = parseInt(card.dataset.id,10);
+      tryMatch();
+    }
+
+    function shuffle(arr){ return arr.map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); }
+
+    function render(){
+      qCol.innerHTML = ''; aCol.innerHTML = '';
+      const answers = shuffle(PAIRS);
+      PAIRS.forEach(p=>{
+        const qc = document.createElement('div');
+        qc.className = 'card tap'; qc.dataset.id = String(p.id); qc.textContent = p.q;
+        qc.addEventListener('click', ()=>tapQuestion(qc));
+        qCol.appendChild(qc);
+      });
+      answers.forEach(p=>{
+        const ac = document.createElement('div');
+        ac.className = 'card tap small'; ac.dataset.id = String(p.id); ac.textContent = p.a;
+        ac.addEventListener('click', ()=>tapAnswer(ac));
+        aCol.appendChild(ac);
+      });
+    }
+
+    function startLevel(level){
+      currentLevel = level;
+      matched.clear(); score = 0; resetSelection();
+      PAIRS = (level === 1) ? LEVEL1.slice() : makeLevel2();
+      updateHUD(); render();
+      $('#finish').classList.remove('show');
+    }
+
+    function nextLevel(){
+      if (currentLevel === 1){ startLevel(2); }
+      else { // لا يوجد مستوى ثالث حتى الآن، نعيد من البداية
+        startLevel(1);
+      }
+    }
+
+    // أزرار
+    $('#restart').addEventListener('click', ()=>startLevel(currentLevel));
+    $('#playAgain').addEventListener('click', ()=>startLevel(currentLevel));
+    $('#nextLevel').addEventListener('click', ()=>{ $('#finish').classList.remove('show'); nextLevel(); });
+
+    // تشغيل أولي
+    startLevel(1);
+
+    // ——— محمّل شعار مرن مع عدة أسماء/مسارات + دعم ?logo= ——
+    (function(){
+      const params = new URLSearchParams(location.search);
+      const provided = params.get('logo');
+      const candidates = provided ? [decodeURIComponent(provided)] : [
+        'school-logo.png','logo.png','logo.jpg','logo.jpeg','logo.webp',
+        'images/school-logo.png','images/logo.png','images/logo.jpg','images/logo.webp'
+      ];
+      const el = document.getElementById('schoolLogo');
+      function tryNext(i){
+        if(i >= candidates.length){ el.style.display='none'; return; }
+        const test = new Image();
+        test.onload = ()=>{ el.src = candidates[i] + '?v=' + Date.now(); el.style.display='block'; };
+        test.onerror = ()=> tryNext(i+1);
+        test.src = candidates[i] + '?probe=' + Math.random();
+      }
+      tryNext(0);
+    })();
+  </script>
 </body>
 </html>
